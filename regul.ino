@@ -24,10 +24,10 @@ void regul(void) {
   delta = papp - conso_consigne;
   float correction = 0;
 
-
+#ifdef DEBUG_PID
   Serial.print("[");
   Serial.print(delta);
-
+#endif
   /*
     if (abs(delta) > 300) { //W
     correction = P*10;
@@ -45,11 +45,11 @@ void regul(void) {
 
   if (papp <= conso_consigne) {
     charge -= correction;
-    ledFlash(orangeLedPin);
+    ledOn(orangeLedPin);
   }
   else {
     charge -= correction;
-    ledFlash(orangeLedPin);
+    ledOff(orangeLedPin);
   }
 
   if (charge > chargeMax) {
@@ -64,7 +64,8 @@ void regul(void) {
     ledOn(blueLedPin);
   else
     ledOff(blueLedPin);
-
+    
+#ifdef DEBUG_PID
   Serial.print("/");
   Serial.print(papp);
   Serial.print("/");
@@ -72,6 +73,7 @@ void regul(void) {
   Serial.print("/");
   Serial.print(conso_consigne);
   Serial.println("]");
+#endif
 
   analogWrite(chargePin, int(charge));
 }

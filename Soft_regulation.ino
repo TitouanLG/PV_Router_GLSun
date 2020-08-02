@@ -1,31 +1,4 @@
-// **********************************************************************************
-// Arduino Teleinfo sample, display information on teleinfo values received
-// **********************************************************************************
-// Creative Commons Attrib Share-Alike License
-// You are free to use/extend this library but please abide with the CC-BY-SA license:
-// http://creativecommons.org/licenses/by-sa/4.0/
-//
-// for detailled explanation of this library see dedicated article
-// https://hallard.me/libteleinfo/
-//
-// For any explanation about teleinfo or use, see my blog
-// https://hallard.me/category/tinfo
-//
-// connect Teleinfo RXD pin To Arduin D3
-// see schematic here https://hallard.me/demystifier-la-teleinfo/
-// and dedicated article here
-//
-// Written by Charles-Henri Hallard (https://hallard.me)
-//
-// History : V1.00 2015-06-14 - First release
-//
-// All text above must be included in any redistribution.
-//
-// **********************************************************************************
 
-#include <LibTeleinfo.h>
-
-TInfo          tinfo; // Teleinfo object
 
 int chargePin = 9, consignePin = A5;
 int blueLedPin = 7, orangeLedPin = 10, papp = 0;
@@ -33,21 +6,20 @@ int conso_consigne = 800;
 float charge = 200, chargeMax = 250;
 
 
-/* ======================================================================
-  Function: printUptime
-  Purpose : print pseudo uptime value
-  Input   : -
-  Output  : -
-  Comments: compteur de secondes basique sans controle de dépassement
-          En plus SoftwareSerial rend le compteur de millis() totalement
-          A la rue, donc la precision de ce compteur de seconde n'est
-          pas fiable du tout, dont acte !!!
-  ====================================================================== */
-void printUptime(void)
-{
-  Serial.print(millis() / 1000);
-  Serial.print(F("s\t"));
-}
+// --- VARIABLES GLOBALES PWR_Mesure --- //
+int16_t cur_pwr;
+bool new_cur_pwr_flag;
+int16_t u_tab[125];
+float i_tab[125];
+
+// ------------------------------------- //
+#define DEBUG_PID
+
+
+#ifdef USE_LINKY
+#include <LibTeleinfo.h>
+
+TInfo          tinfo; // Teleinfo object
 
 /* ======================================================================
   Function: DataCallback
@@ -75,20 +47,15 @@ void DataCallback(ValueList * me, uint8_t  flags)
 
   if (String(me->name) == "PAPP") {
     //Serial.println("#     .. finding PAPP !");
-    papp = atol(me->value);
+
+    //papp = atol(me->value);
+
   }
   else {
     //Serial.println("#     .. can't find PAPP ");
   }
 }
-
-/* ======================================================================
-  Function: setup
-  Purpose : Setup I/O and other one time startup stuff
-  Input   : -
-  Output  : -
-  Comments: -
-  ====================================================================== */
+#endif
 
 
 void setup()
@@ -105,12 +72,9 @@ void setup()
     delay(200);
   }
 
-  // Configure Teleinfo Soft serial
-  // La téléinfo est connectee sur D3
-  // ceci permet d'eviter les conflits avec la
-  // vraie serial lors des uploads
-  Serial.begin(1200);
+  Serial.begin(9600);
 
+#ifdef USE_LINKY
   // Init teleinfo
   tinfo.init();
 
@@ -120,6 +84,8 @@ void setup()
 
   //printUptime();
   Serial.println(F("# Teleinfo started"));
+#endif
+  Serial.println(F("# Regul started"));
 }
 
 /* ======================================================================
@@ -133,11 +99,19 @@ void loop()
 {
   conso_consigne = analogRead(consignePin);
 
-  // Teleinformation processing
-  if (Serial.available() ) {
+  /*
+    // Teleinformation processing
+    if (Serial.available() ) {
     tinfo.process(Serial.read());
+    }
+  */
+  pwr_cadenced_task();
+
+  if (new_cur_pwr_flag) {
+    papp = cur_pwr;
+    new_cur_pwr_flag = false;
   }
-  if (timeUp()) {
-    regul();
-  }
+
+  regul();
+
 }
