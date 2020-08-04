@@ -14,9 +14,9 @@ bool timeUp(void) {
 void regul(void) {
 
   //Regul
-  const float P = 0.01;
+  const float P = 0.005;
   const float I = 0;
-  const float D = 0.01;
+  const float D = 0.0; //0.01;
   static int delta = 0, deltaPast = 0;
 
   // Si delta > 0 alors on consomme plus que l'idéal mais
