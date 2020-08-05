@@ -104,7 +104,7 @@ void pwr_cadenced_task() {
 #ifdef DEBUG_PWR
     Serial.println(nb);
     for (int i = 0; i < nb; i++) {
-      Serial.println(String(u_tab[i]) +"," +String(i_tab[i]));
+      Serial.println(String(u_tab[i]) +"," +String(i_tab[i]) +"," +String(u_tab[i]*i_tab[i]));
     }
     delay(5000);
 #endif
