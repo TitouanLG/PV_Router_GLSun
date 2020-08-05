@@ -4,7 +4,7 @@
 #define VOLTAGE_COEF 295  // DIV =11  // m =240/12 =20
 #define CURRENT_COEF 30  // Gcapteur = 30V/A
 #define VOLTAGE_OFFSET 350
-#define CURRENT_OFFSET 350
+#define CURRENT_OFFSET 362
 
 #define START_UP_TIME 3000
 
@@ -21,11 +21,11 @@ int readInstVoltage() {  //In V
 
 double readInstCurrent() {  //In mA
   int32_t digValue = 0;
-  float i = 0;
+  double i = 0;
   digValue = analogRead(CURRENT_PIN);
   digValue = digValue - CURRENT_OFFSET;
   digValue *= CURRENT_COEF;
-  i = float(digValue) / float(ADC_COEF);
+  i = double(digValue) / double(ADC_COEF);
   return i;
 }
 
@@ -81,6 +81,7 @@ void pwr_cadenced_task() {
       sigma += readInstPower();
       nb++;
       u_tab[nb] = readInstVoltage();
+      i_tab[nb] = readInstCurrent();
       if (millis() > timeIn + 20 * 2)
         end_of_per_flag = true;
     }
@@ -96,16 +97,18 @@ void pwr_cadenced_task() {
       sigma += past_pwr[rang];
     }
 
-    cur_pwr = sigma/nb_average;
+    cur_pwr = sigma / nb_average;
     new_cur_pwr_flag = true;
+    digitalWrite(13, LOW);
 
-#ifdef DEBUG
+#ifdef DEBUG_PWR
     Serial.println(nb);
     for (int i = 0; i < nb; i++) {
-      Serial.println(u_tab[i]);
+      Serial.println(String(u_tab[i]) +"," +String(i_tab[i]));
     }
+    delay(5000);
 #endif
-    digitalWrite(13, LOW);
+
 
   }
 }

@@ -13,7 +13,9 @@ int16_t u_tab[125];
 float i_tab[125];
 
 // ------------------------------------- //
-#define DEBUG_PID
+#define DEBUG_PWR
+//#define DEBUG_PID
+#define USE_LINKY
 
 
 #ifdef USE_LINKY
@@ -109,6 +111,9 @@ void loop()
 
   if (new_cur_pwr_flag) {
     papp = cur_pwr;
+#ifdef DEBUG_PWR
+    Serial.println(String(cur_pwr) + "VA");
+#endif
     new_cur_pwr_flag = false;
   }
 
