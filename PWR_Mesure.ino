@@ -1,51 +1,45 @@
-#define VOLTAGE_PIN A1
-#define CURRENT_PIN A3
-#define ADC_COEF 205         // =1024pt / 5V
-#define VOLTAGE_COEF 295  // DIV =11  // m =240/12 =20
-#define CURRENT_COEF 30  // Gcapteur = 30V/A
-#define VOLTAGE_OFFSET 350
-#define CURRENT_OFFSET 362
-
-#define START_UP_TIME 3000
-
 
 int readInstVoltage() {  //In V
   int32_t digValue = 0;
   float u = 0;
-  digValue = analogRead(VOLTAGE_PIN);
-  digValue = digValue - VOLTAGE_OFFSET;
-  digValue *= VOLTAGE_COEF;
-  u = digValue / ADC_COEF;
+  digValue = analogRead(VOLTAGE_PIN) * ADC_COEF; //digValue in mV relative
+  digValue = digValue - voltageOffset;          //digValue in mV absolute
+  u = float(float(digValue) * float(VOLTAGE_COEF));          //u in Volts
+  u += 8;  //Correction d'usine de la valeur moyenne
   return int(u);
 }
 
 double readInstCurrent() {  //In mA
   int32_t digValue = 0;
   double i = 0;
-  digValue = analogRead(CURRENT_PIN);
-  digValue = digValue - CURRENT_OFFSET;
-  digValue *= CURRENT_COEF;
-  i = double(digValue) / double(ADC_COEF);
+  digValue = analogRead(CURRENT_PIN) * ADC_COEF; //digValue in mV relative
+  digValue = digValue - CURRENT_OFFSET;         //digValue in mV absolute
+  i = double(digValue) * double(CURRENT_COEF); //i in milli-Amps
   return i;
 }
 
+/*
 double readInstPower() {
   return (readInstVoltage() * readInstCurrent());
 }
+*/
+double readInstPower(){
+  return (analogRead(CONSIGNE_AUX1_PIN)/2);
+}
 
 
-float readRMSVoltage() {
+float readRMSVoltage() {    //TODO
   if (millis() > START_UP_TIME) {
     float U = 0;
-    U = VOLTAGE_COEF * (analogRead(VOLTAGE_PIN));
+    U = VOLTAGE_COEF * (analogRead(VOLTAGE_PIN)) * ADC_COEF;
     return U;
   }
 }
 
-float readRMSCurrent() {
+float readRMSCurrent() {    //TODO
   if (millis() > START_UP_TIME) {
     float I = 0;
-    I = CURRENT_COEF * (analogRead(CURRENT_PIN));
+    I = CURRENT_COEF * (analogRead(CURRENT_PIN)) * ADC_COEF;
     return I;
   }
 }
@@ -75,9 +69,12 @@ void pwr_cadenced_task() {
     } while ( !(readInstVoltage() > 0 || u_past < 0) );
 
     timeIn = millis();
-    digitalWrite(13, HIGH);
+    digitalWrite(infoLedPin, HIGH);
 
     while (!end_of_per_flag) {
+      //On récupère la valeur moyenne de la tension réseau
+      voltageOffset = analogRead(VOLTAGE_OFFSET_PIN) * ADC_COEF;
+      //puis on lance les vraies mesures
       sigma += readInstPower();
       nb++;
       u_tab[nb] = readInstVoltage();
@@ -99,7 +96,7 @@ void pwr_cadenced_task() {
 
     cur_pwr = sigma / nb_average;
     new_cur_pwr_flag = true;
-    digitalWrite(13, LOW);
+    digitalWrite(infoLedPin, LOW);
 
 #ifdef DEBUG_PWR
     Serial.println(nb);

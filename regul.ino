@@ -28,28 +28,19 @@ void regul(void) {
   Serial.print("[");
   Serial.print(delta);
 #endif
-  /*
-    if (abs(delta) > 300) { //W
-    correction = P*10;
-    }
-    else if (abs(delta) > 80) { //W
-    correction = P*3;
-    }
-    else { //Il ne faut faire qu'une petit regul donc on passe en ++ ou --
-    correction = P*1;
-    }
-  */
 
   correction = P * delta + D * (delta - deltaPast);
   deltaPast = delta;
 
   if (papp <= conso_consigne) {
     charge -= correction;
-    ledOn(orangeLedPin);
+    ledOn(pidMLedPin);
+    ledOff(pidPLedPin);
   }
   else {
     charge -= correction;
-    ledOff(orangeLedPin);
+    ledOn(pidPLedPin);
+    ledOff(pidMLedPin);
   }
 
   if (charge > chargeMax) {
@@ -60,10 +51,10 @@ void regul(void) {
   }
 
   //Affichage
-  if (papp < (conso_consigne - 50))
-    ledOn(blueLedPin);
+  if (delta > -50 && delta < 50)
+    ledOn(gridZeroLedPin);
   else
-    ledOff(blueLedPin);
+    ledOff(gridZeroLedPin);
     
 #ifdef DEBUG_PID
   Serial.print("/");
@@ -75,5 +66,5 @@ void regul(void) {
   Serial.println("]");
 #endif
 
-  analogWrite(chargePin, int(charge));
+  analogWrite(LOAD1_PIN, int(255-charge)); //0 to 255 max Polarité inverse
 }
